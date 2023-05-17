@@ -1,0 +1,32 @@
+version: '3.7'
+services:
+  api:
+    container_name: analysis-server-api
+    build: ./
+    # restart: always
+    image: analysis-server-api
+    ports:
+      - 5555:4444
+    depends_on:
+      - db
+      - redis
+    links:
+      - db
+      - redis
+  db:
+    container_name: analysis-server-db
+    image: postgres:13
+    # restart: always
+    ports:
+      - 5535:5432
+    environment:
+      POSTGRES_USER: analysis
+      POSTGRES_PASSWORD: 1b34cfb13aa9d039f0ddc3fd983757e9
+      POSTGRES_DB: analysis
+
+  redis:
+    container_name: analysis-server-redis
+    build: redis/.
+    # restart: always
+    ports:
+      - 6929:6379

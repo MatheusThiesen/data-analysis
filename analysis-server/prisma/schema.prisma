@@ -1,0 +1,128 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id               String    @id @unique @default(uuid())
+  email            String    @unique
+  nome             String
+  senha            String
+  tokenRefresh     String?
+  senhaResetToken  String?
+  senhaResetExpira DateTime?
+  eAtivo           Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  empresaId String
+
+  @@map("usuarios")
+}
+
+model Empresa {
+  id           String   @id @unique @default(uuid())
+  cnpj         String   @unique
+  razaoSocial  String
+  nomeFantasia String
+  eAtivo       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  usuario           Usuario[]
+  grupoContabil     GrupoContabil[]
+  analitico         Analitico[]
+  filial            Filial[]
+  lacamentoContabil LacamentoContabil[]
+
+  @@map("empresas")
+}
+
+model GrupoContabil {
+  id        String  @id @unique @default(uuid())
+  codigo    String
+  descricao String?
+
+  analitico Analitico[]
+
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  empresaId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([codigo, empresaId])
+  @@map("gruposContabil")
+}
+
+model Analitico {
+  id        String  @id @unique @default(uuid())
+  codigo    String
+  descricao String?
+
+  filial     Filial[]
+  lancamento LacamentoContabil[]
+
+  empresa         Empresa        @relation(fields: [empresaId], references: [id])
+  empresaId       String
+  grupoContabil   GrupoContabil? @relation(fields: [grupoContabilId], references: [id])
+  grupoContabilId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([codigo, empresaId])
+  @@map("analiticosContabil")
+}
+
+model Filial {
+  id        String  @id @unique @default(uuid())
+  codigo    String
+  descricao String?
+
+  lancamento LacamentoContabil[]
+  analitico  Analitico[]
+
+  empresa   Empresa @relation(fields: [empresaId], references: [id])
+  empresaId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([codigo, empresaId])
+  @@map("filiais")
+}
+
+model LacamentoContabil {
+  id             String   @id @unique @default(uuid())
+  lote           String
+  lancamento     String
+  historico      String
+  hierarquia     String
+  documento      String
+  dataLancamento DateTime
+  tipo           String
+  valor          Float
+
+  empresa     Empresa    @relation(fields: [empresaId], references: [id])
+  empresaId   String
+  filial      Filial?    @relation(fields: [filialId], references: [id])
+  filialId    String?
+  analitico   Analitico? @relation(fields: [analiticoId], references: [id])
+  analiticoId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([documento, lancamento, lote, tipo, valor, dataLancamento, empresaId])
+  @@map("lacamentosContabil")
+}
